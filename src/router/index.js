@@ -17,6 +17,16 @@ const routes = [
     component: () => import('@/views/BookDetail.vue')
   },
   {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/views/Login.vue')
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: () => import('@/views/Register.vue')
+  },
+  {
     path: '/publish',
     name: 'publish',
     component: () => import('@/views/Publish.vue')
