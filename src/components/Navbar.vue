@@ -100,5 +100,6 @@ onMounted(() => {
   window.addEventListener('storage', checkLoginStatus)
   window.addEventListener('login-success', checkLoginStatus)
   window.addEventListener('logout-success', checkLoginStatus)
+  window.addEventListener('user-updated', checkLoginStatus)
 })
 </script>

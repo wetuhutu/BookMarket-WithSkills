@@ -194,28 +194,54 @@
             <div class="card p-6">
               <form @submit.prevent="handleSaveSettings" class="space-y-6">
                 <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">头像</label>
+                  <div class="flex items-center space-x-4">
+                    <div class="w-20 h-20 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center overflow-hidden">
+                      <img v-if="settings.avatar" :src="settings.avatar" :alt="settings.name" class="w-full h-full object-cover">
+                      <span v-else class="text-3xl">👤</span>
+                    </div>
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        @change="handleAvatarChange"
+                        class="hidden"
+                        ref="avatarInput"
+                      >
+                      <button
+                        type="button"
+                        @click="$refs.avatarInput.click()"
+                        :disabled="avatarUploading"
+                        class="btn btn-secondary text-sm"
+                      >
+                        {{ avatarUploading ? '上传中...' : '上传头像' }}
+                      </button>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">支持 JPG、PNG 格式，最大2MB</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">昵称</label>
-                  <input v-model="settings.name" type="text" class="input">
+                  <input v-model="settings.name" type="text" class="input" placeholder="请输入昵称">
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">学校</label>
-                  <input v-model="settings.school" type="text" class="input">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">邮箱</label>
+                  <input v-model="settings.email" type="email" class="input" placeholder="请输入邮箱">
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">专业</label>
-                  <input v-model="settings.major" type="text" class="input">
-                </div>
-
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">手机号</label>
-                  <input v-model="settings.phone" type="tel" class="input">
-                </div>
-
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">微信号</label>
-                  <input v-model="settings.wechat" type="text" class="input">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">卖家描述</label>
+                  <textarea
+                    v-model="settings.sellerDescription"
+                    class="input"
+                    rows="4"
+                    placeholder="介绍一下自己，让买家更信任你"
+                  ></textarea>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {{ user.isSeller ? '您是认证卖家，此描述将显示给买家' : '填写此描述可申请成为卖家' }}
+                  </p>
                 </div>
 
                 <button type="submit" class="btn btn-primary">保存设置</button>
@@ -229,8 +255,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { getUserProfile } from '@/api'
+import { ref, onMounted, watch } from 'vue'
+import { getUserProfile, updateUserProfile, getMyBooks, uploadFile } from '@/api'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -272,11 +298,38 @@ const favorites = ref([])
 
 const settings = ref({
   name: '',
-  school: '',
-  major: '',
-  phone: '',
-  wechat: ''
+  email: '',
+  avatar: '',
+  sellerDescription: ''
 })
+
+const avatarInput = ref(null)
+const avatarUploading = ref(false)
+
+const handleAvatarChange = async (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    if (file.size > 2 * 1024 * 1024) {
+      alert('头像大小不能超过2MB')
+      return
+    }
+    
+    try {
+      avatarUploading.value = true
+      const response = await uploadFile(file, 'avatar')
+      if (response.code === 200 && response.data) {
+        settings.value.avatar = response.data.url
+      } else {
+        alert('上传失败：' + (response.message || '未知错误'))
+      }
+    } catch (error) {
+      console.error('上传头像失败:', error)
+      alert('上传失败，请稍后重试')
+    } finally {
+      avatarUploading.value = false
+    }
+  }
+}
 
 const fetchUserProfile = async () => {
   try {
@@ -287,10 +340,9 @@ const fetchUserProfile = async () => {
       user.value = response.data
       settings.value = {
         name: response.data.username || '',
-        school: '',
-        major: '',
-        phone: response.data.phone || '',
-        wechat: ''
+        email: response.data.email || '',
+        avatar: response.data.avatar || '',
+        sellerDescription: response.data.sellerDescription || ''
       }
     } else {
       error.value = '获取用户信息失败'
@@ -323,7 +375,38 @@ const removeFavorite = (id) => {
   favorites.value = favorites.value.filter(book => book.id !== id)
 }
 
-const handleSaveSettings = () => {
-  alert('设置保存成功！')
+const handleSaveSettings = async () => {
+  try {
+    const updateData = {
+      username: settings.value.name,
+      email: settings.value.email,
+      avatar: settings.value.avatar,
+      sellerDescription: settings.value.sellerDescription
+    }
+    
+    const response = await updateUserProfile(updateData)
+    
+    if (response.code === 200) {
+      alert('设置保存成功！')
+      
+      const updatedUser = {
+        ...user.value,
+        username: updateData.username,
+        email: updateData.email,
+        avatar: updateData.avatar,
+        sellerDescription: updateData.sellerDescription
+      }
+      
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+      user.value = updatedUser
+      
+      window.dispatchEvent(new Event('user-updated'))
+    } else {
+      alert('保存失败：' + (response.message || '未知错误'))
+    }
+  } catch (error) {
+    console.error('保存设置失败:', error)
+    alert('保存失败，请稍后重试')
+  }
 }
 </script>

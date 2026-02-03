@@ -19,3 +19,18 @@ export const login = (data) => request.post('/auth/login', data)
 export const register = (data) => request.post('/auth/register', data)
 
 export const getUserProfile = () => request.get('/users/profile')
+
+export const updateUserProfile = (data) => request.put('/users/profile', data)
+
+export const getMyBooks = (params) => request.get('/users/books', { params })
+
+export const uploadFile = (file, type = 'image') => {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('type', type)
+  return request.post('/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
