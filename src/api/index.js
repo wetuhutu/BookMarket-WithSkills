@@ -17,3 +17,5 @@ export const getBookRelated = (id, limit = 4) => request.get(`/books/${id}/relat
 export const login = (data) => request.post('/auth/login', data)
 
 export const register = (data) => request.post('/auth/register', data)
+
+export const getUserProfile = () => request.get('/users/profile')

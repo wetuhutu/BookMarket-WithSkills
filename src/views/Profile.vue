@@ -4,45 +4,73 @@
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div class="lg:col-span-1">
           <div class="card p-6 sticky top-24">
-            <div class="text-center mb-6">
-              <div class="w-24 h-24 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span class="text-4xl">{{ user.avatar }}</span>
-              </div>
-              <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ user.name }}</h2>
-              <p class="text-gray-600 dark:text-gray-400">{{ user.school }}</p>
+            <div v-if="loading" class="text-center py-8">
+              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+              <p class="mt-4 text-gray-600 dark:text-gray-400">加载中...</p>
             </div>
-
-            <div class="flex justify-around py-4 border-t border-b border-gray-200 dark:border-gray-700">
-              <div class="text-center">
-                <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ user.sold }}</div>
-                <div class="text-sm text-gray-600 dark:text-gray-400">已售出</div>
-              </div>
-              <div class="text-center">
-                <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ user.listed }}</div>
-                <div class="text-sm text-gray-600 dark:text-gray-400">在售</div>
-              </div>
-              <div class="text-center">
-                <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ user.rating }}</div>
-                <div class="text-sm text-gray-600 dark:text-gray-400">评分</div>
-              </div>
+            <div v-else-if="error" class="text-center py-8">
+              <p class="text-red-600 dark:text-red-400">{{ error }}</p>
+              <button @click="fetchUserProfile" class="mt-4 btn btn-primary text-sm">重试</button>
             </div>
+            <div v-else>
+              <div class="text-center mb-6">
+                <div class="w-24 h-24 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden">
+                  <img v-if="user.avatar" :src="user.avatar" :alt="user.username" class="w-full h-full object-cover">
+                  <span v-else class="text-4xl">👤</span>
+                </div>
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ user.username }}</h2>
+                <p class="text-gray-600 dark:text-gray-400">{{ user.level }}</p>
+              </div>
 
-            <nav class="mt-6 space-y-2">
-              <button
-                v-for="tab in tabs"
-                :key="tab.id"
-                @click="activeTab = tab.id"
-                :class="[
-                  'w-full text-left px-4 py-3 rounded-lg transition-colors',
-                  activeTab === tab.id
-                    ? 'bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400 font-medium'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                ]"
-              >
-                <span class="mr-2">{{ tab.icon }}</span>
-                {{ tab.label }}
-              </button>
-            </nav>
+              <div class="flex justify-around py-4 border-t border-b border-gray-200 dark:border-gray-700">
+                <div class="text-center">
+                  <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ user.sellerSalesCount }}</div>
+                  <div class="text-sm text-gray-600 dark:text-gray-400">已售出</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ user.points }}</div>
+                  <div class="text-sm text-gray-600 dark:text-gray-400">积分</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ user.sellerRating || 0 }}</div>
+                  <div class="text-sm text-gray-600 dark:text-gray-400">评分</div>
+                </div>
+              </div>
+
+              <div v-if="user.isSeller" class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">卖家等级</span>
+                  <span class="text-sm font-bold text-yellow-600 dark:text-yellow-400">{{ user.sellerLevel || '普通卖家' }}</span>
+                </div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">好评率</span>
+                  <span class="text-sm font-bold text-green-600 dark:text-green-400">{{ user.sellerPositiveRate }}%</span>
+                </div>
+                <div v-if="user.sellerIsVerified" class="flex items-center justify-center mt-2">
+                  <svg class="w-4 h-4 text-blue-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                  </svg>
+                  <span class="text-sm text-blue-600 dark:text-blue-400">已认证卖家</span>
+                </div>
+              </div>
+
+              <nav class="mt-6 space-y-2">
+                <button
+                  v-for="tab in tabs"
+                  :key="tab.id"
+                  @click="activeTab = tab.id"
+                  :class="[
+                    'w-full text-left px-4 py-3 rounded-lg transition-colors',
+                    activeTab === tab.id
+                      ? 'bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  ]"
+                >
+                  <span class="mr-2">{{ tab.icon }}</span>
+                  {{ tab.label }}
+                </button>
+              </nav>
+            </div>
           </div>
         </div>
 
@@ -201,18 +229,32 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { getUserProfile } from '@/api'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const activeTab = ref('my-books')
+const loading = ref(true)
+const error = ref(null)
 
 const user = ref({
-  name: '张同学',
-  avatar: '👨‍🎓',
-  school: '清华大学',
-  major: '计算机科学与技术',
-  sold: 23,
-  listed: 5,
-  rating: 4.9
+  id: null,
+  username: '',
+  phone: '',
+  email: '',
+  avatar: '',
+  level: '',
+  points: 0,
+  isSeller: 0,
+  sellerLevel: null,
+  sellerRating: 0,
+  sellerIsVerified: 0,
+  sellerDescription: null,
+  sellerPositiveRate: 0,
+  sellerSalesCount: 0,
+  createdAt: '',
+  updatedAt: ''
 })
 
 const tabs = [
@@ -222,77 +264,50 @@ const tabs = [
   { id: 'settings', label: '账户设置', icon: '⚙️' }
 ]
 
-const myBooks = ref([
-  {
-    id: 1,
-    title: '高等数学（第七版）上册',
-    author: '同济大学数学系',
-    price: 35,
-    status: '在售',
-    cover: 'https://via.placeholder.com/300x400/3b82f6/ffffff?text=高等数学'
-  },
-  {
-    id: 2,
-    title: 'JavaScript高级程序设计',
-    author: 'Nicholas C. Zakas',
-    price: 45,
-    status: '已售出',
-    cover: 'https://via.placeholder.com/300x400/10b981/ffffff?text=JavaScript'
-  },
-  {
-    id: 3,
-    title: 'Python编程：从入门到实践',
-    author: 'Eric Matthes',
-    price: 38,
-    status: '在售',
-    cover: 'https://via.placeholder.com/300x400/06b6d4/ffffff?text=Python'
-  }
-])
+const myBooks = ref([])
 
-const orders = ref([
-  {
-    id: '202401150001',
-    time: '2024-01-15 14:30',
-    status: '待收货',
-    bookTitle: '百年孤独',
-    bookCover: 'https://via.placeholder.com/300x400/f59e0b/ffffff?text=百年孤独',
-    seller: '李同学',
-    price: 18
-  },
-  {
-    id: '202401100002',
-    time: '2024-01-10 09:15',
-    status: '已完成',
-    bookTitle: '经济学原理',
-    bookCover: 'https://via.placeholder.com/300x400/8b5cf6/ffffff?text=经济学原理',
-    seller: '王同学',
-    price: 52
-  }
-])
+const orders = ref([])
 
-const favorites = ref([
-  {
-    id: 4,
-    title: '线性代数',
-    price: 28,
-    condition: '九成新',
-    cover: 'https://via.placeholder.com/300x400/6366f1/ffffff?text=线性代数'
-  },
-  {
-    id: 5,
-    title: '活着',
-    price: 15,
-    condition: '全新',
-    cover: 'https://via.placeholder.com/300x400/ef4444/ffffff?text=活着'
-  }
-])
+const favorites = ref([])
 
 const settings = ref({
-  name: '张同学',
-  school: '清华大学',
-  major: '计算机科学与技术',
+  name: '',
+  school: '',
+  major: '',
   phone: '',
   wechat: ''
+})
+
+const fetchUserProfile = async () => {
+  try {
+    loading.value = true
+    error.value = null
+    const response = await getUserProfile()
+    if (response.code === 200 && response.data) {
+      user.value = response.data
+      settings.value = {
+        name: response.data.username || '',
+        school: '',
+        major: '',
+        phone: response.data.phone || '',
+        wechat: ''
+      }
+    } else {
+      error.value = '获取用户信息失败'
+    }
+  } catch (err) {
+    console.error('获取用户信息失败:', err)
+    error.value = '获取用户信息失败，请检查登录状态'
+    if (err.response?.status === 403) {
+      router.push('/login')
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchUserProfile()
 })
 
 const getOrderStatusClass = (status) => {
