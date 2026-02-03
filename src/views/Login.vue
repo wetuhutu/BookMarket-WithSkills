@@ -103,6 +103,7 @@ const handleLogin = async () => {
         if (res.data.user) {
           localStorage.setItem('user', JSON.stringify(res.data.user))
         }
+        window.dispatchEvent(new Event('login-success'))
         router.push('/')
       } else {
         errorMessage.value = '登录失败：未返回token'

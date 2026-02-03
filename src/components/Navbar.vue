@@ -85,6 +85,7 @@ const handleLogout = () => {
   localStorage.removeItem('user')
   isLoggedIn.value = false
   currentUser.value = null
+  window.dispatchEvent(new Event('logout-success'))
   router.push('/')
 }
 
@@ -97,5 +98,7 @@ onMounted(() => {
   }
   
   window.addEventListener('storage', checkLoginStatus)
+  window.addEventListener('login-success', checkLoginStatus)
+  window.addEventListener('logout-success', checkLoginStatus)
 })
 </script>
