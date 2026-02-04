@@ -76,36 +76,108 @@
 
         <div class="lg:col-span-3">
           <div v-if="activeTab === 'my-books'" class="space-y-6">
-            <div class="flex justify-between items-center">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 class="text-2xl font-bold text-gray-900 dark:text-white">我的书籍</h2>
+              <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm text-gray-600 dark:text-gray-400">状态：</span>
+                  <select
+                    v-model="myBooksPagination.status"
+                    @change="handleStatusChange($event.target.value)"
+                    class="input text-sm py-2"
+                  >
+                    <option :value="1">在售</option>
+                    <option :value="0">下架</option>
+                  </select>
+                </div>
+                <router-link to="/publish" class="btn btn-primary">
+                  发布新书
+                </router-link>
+              </div>
+            </div>
+
+            <div v-if="myBooksLoading" class="text-center py-12">
+              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+              <p class="mt-4 text-gray-600 dark:text-gray-400">加载中...</p>
+            </div>
+
+            <div v-else-if="myBooksError" class="text-center py-12">
+              <p class="text-red-600 dark:text-red-400 mb-4">{{ myBooksError }}</p>
+              <button @click="fetchMyBooks" class="btn btn-primary text-sm">重试</button>
+            </div>
+
+            <div v-else-if="myBooks.length === 0" class="text-center py-12">
+              <div class="text-6xl mb-4">📚</div>
+              <p class="text-gray-600 dark:text-gray-400 mb-4">暂无书籍</p>
               <router-link to="/publish" class="btn btn-primary">
-                发布新书
+                发布第一本书
               </router-link>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div
-                v-for="book in myBooks"
-                :key="book.id"
-                class="card overflow-hidden hover:shadow-lg transition-shadow"
-              >
-                <div class="flex">
-                  <div class="w-32 flex-shrink-0">
-                    <img :src="book.cover" :alt="book.title" class="w-full h-full object-cover">
-                  </div>
-                  <div class="flex-1 p-4">
-                    <h3 class="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2">{{ book.title }}</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">{{ book.author }}</p>
-                    <div class="flex items-center justify-between">
-                      <span class="text-lg font-bold text-primary-600 dark:text-primary-400">¥{{ book.price }}</span>
-                      <span :class="[
-                        'text-xs px-2 py-1 rounded-full',
-                        book.status === '在售' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'
-                      ]">
-                        {{ book.status }}
-                      </span>
+            <div v-else>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div
+                  v-for="book in myBooks"
+                  :key="book.id"
+                  class="card overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  <div class="flex">
+                    <div class="w-32 flex-shrink-0">
+                      <img :src="book.cover" :alt="book.title" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-1 p-4">
+                      <h3 class="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2">{{ book.title }}</h3>
+                      <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">{{ book.author }}</p>
+                      <div class="flex items-center justify-between">
+                        <div>
+                          <span class="text-lg font-bold text-primary-600 dark:text-primary-400">¥{{ book.price }}</span>
+                          <span v-if="book.originalPrice" class="text-sm text-gray-400 line-through ml-2">¥{{ book.originalPrice }}</span>
+                        </div>
+                        <span :class="[
+                          'text-xs px-2 py-1 rounded-full',
+                          book.status === 1 ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                        ]">
+                          {{ book.status === 1 ? '在售' : '下架' }}
+                        </span>
+                      </div>
+                      <div class="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                        <span>{{ book.condition }}</span>
+                        <span>库存: {{ book.stock }}</span>
+                      </div>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              <div v-if="myBooksPagination.total > myBooksPagination.pageSize" class="mt-6 flex justify-center">
+                <div class="flex items-center gap-2">
+                  <button
+                    @click="handlePageChange(myBooksPagination.page - 1)"
+                    :disabled="myBooksPagination.page === 1"
+                    :class="[
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      myBooksPagination.page === 1
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                    ]"
+                  >
+                    上一页
+                  </button>
+                  <span class="text-sm text-gray-600 dark:text-gray-400">
+                    第 {{ myBooksPagination.page }} 页，共 {{ Math.ceil(myBooksPagination.total / myBooksPagination.pageSize) }} 页
+                  </span>
+                  <button
+                    @click="handlePageChange(myBooksPagination.page + 1)"
+                    :disabled="myBooksPagination.page >= Math.ceil(myBooksPagination.total / myBooksPagination.pageSize)"
+                    :class="[
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      myBooksPagination.page >= Math.ceil(myBooksPagination.total / myBooksPagination.pageSize)
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                    ]"
+                  >
+                    下一页
+                  </button>
                 </div>
               </div>
             </div>
@@ -291,6 +363,14 @@ const tabs = [
 ]
 
 const myBooks = ref([])
+const myBooksLoading = ref(false)
+const myBooksError = ref(null)
+const myBooksPagination = ref({
+  page: 1,
+  pageSize: 10,
+  total: 0,
+  status: 1
+})
 
 const orders = ref([])
 
@@ -362,6 +442,12 @@ onMounted(() => {
   fetchUserProfile()
 })
 
+watch(activeTab, (newTab) => {
+  if (newTab === 'my-books' && myBooks.value.length === 0) {
+    fetchMyBooks()
+  }
+})
+
 const getOrderStatusClass = (status) => {
   const classes = {
     '待收货': 'bg-yellow-100 text-yellow-600',
@@ -373,6 +459,44 @@ const getOrderStatusClass = (status) => {
 
 const removeFavorite = (id) => {
   favorites.value = favorites.value.filter(book => book.id !== id)
+}
+
+const fetchMyBooks = async () => {
+  try {
+    myBooksLoading.value = true
+    myBooksError.value = null
+    const params = {
+      page: myBooksPagination.value.page,
+      pageSize: myBooksPagination.value.pageSize,
+      status: myBooksPagination.value.status
+    }
+    const response = await getMyBooks(params)
+    if (response.code === 200 && response.data) {
+      myBooks.value = response.data.list || []
+      myBooksPagination.value.total = response.data.total || 0
+    } else {
+      myBooksError.value = '获取我的书籍失败'
+    }
+  } catch (err) {
+    console.error('获取我的书籍失败:', err)
+    myBooksError.value = '获取我的书籍失败'
+    if (err.response?.status === 403) {
+      router.push('/login')
+    }
+  } finally {
+    myBooksLoading.value = false
+  }
+}
+
+const handlePageChange = (page) => {
+  myBooksPagination.value.page = page
+  fetchMyBooks()
+}
+
+const handleStatusChange = (status) => {
+  myBooksPagination.value.status = status
+  myBooksPagination.value.page = 1
+  fetchMyBooks()
 }
 
 const handleSaveSettings = async () => {
