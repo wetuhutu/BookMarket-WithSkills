@@ -1,0 +1,327 @@
+{
+  "backendUrl": "http://localhost:8080/api",
+  "testAccounts": [
+    {
+      "name": "普通用户",
+      "account": "wstest",
+      "password": "123456"
+    },
+    {
+      "name": "管理员",
+      "account": "admin",
+      "password": "admin123"
+    }
+  ],
+  "testCases": [
+    {
+      "name": "Get Book Categories",
+      "endpoint": "/books/categories",
+      "method": "GET",
+      "expectedStatus": 200,
+      "maxResponseTime": 200,
+      "requiresAuth": false,
+      "validationRules": {
+        "responseStructure": {
+          "code": "number",
+          "message": "string",
+          "data": "array"
+        },
+        "dataFields": [
+          {
+            "name": "string",
+            "id": "string",
+            "icon": "string",
+            "count": "number"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Get Hot Books",
+      "endpoint": "/books/hot",
+      "method": "GET",
+      "expectedStatus": 200,
+      "maxResponseTime": 200,
+      "requiresAuth": false,
+      "validationRules": {
+        "responseStructure": {
+          "code": "number",
+          "message": "string",
+          "data": "array"
+        },
+        "dataFields": [
+          {
+            "id": "number",
+            "title": "string",
+            "author": "string",
+            "categoryId": "string",
+            "condition": "string",
+            "price": "number",
+            "originalPrice": "number",
+            "cover": "string",
+            "sellerName": "string",
+            "sellerLevel": "string",
+            "sellerRating": "number",
+            "isVerified": "boolean"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Get Books List",
+      "endpoint": "/books",
+      "method": "GET",
+      "expectedStatus": 200,
+      "maxResponseTime": 200,
+      "requiresAuth": false,
+      "queryParams": {
+        "page": 1,
+        "pageSize": 12
+      },
+      "validationRules": {
+        "responseStructure": {
+          "code": "number",
+          "message": "string",
+          "data": "object"
+        },
+        "dataFields": {
+          "list": "array",
+          "total": "number",
+          "page": "number",
+          "pageSize": "number"
+        }
+      }
+    },
+    {
+      "name": "Get Book Detail",
+      "endpoint": "/books/1",
+      "method": "GET",
+      "expectedStatus": 200,
+      "maxResponseTime": 200,
+      "requiresAuth": false,
+      "validationRules": {
+        "responseStructure": {
+          "code": "number",
+          "message": "string",
+          "data": "object"
+        },
+        "dataFields": {
+          "id": "number",
+          "title": "string",
+          "author": "string",
+          "isbn": "string",
+          "publisher": "string",
+          "publishDate": "string",
+          "pages": "number",
+          "categoryId": "string",
+          "condition": "string",
+          "price": "number",
+          "originalPrice": "number",
+          "cover": "string",
+          "description": "string",
+          "sellerId": "number",
+          "sellerName": "string",
+          "sellerLevel": "string",
+          "sellerRating": "number",
+          "verified": "boolean"
+        }
+      }
+    },
+    {
+      "name": "Get Book Reviews",
+      "endpoint": "/books/1/reviews",
+      "method": "GET",
+      "expectedStatus": 200,
+      "maxResponseTime": 200,
+      "requiresAuth": false,
+      "validationRules": {
+        "responseStructure": {
+          "code": "number",
+          "message": "string",
+          "data": "object"
+        },
+        "dataFields": {
+          "list": "array",
+          "total": "number",
+          "page": "number",
+          "pageSize": "number"
+        }
+      }
+    },
+    {
+      "name": "Get Review Statistics",
+      "endpoint": "/books/1/reviews/statistics",
+      "method": "GET",
+      "expectedStatus": 200,
+      "maxResponseTime": 200,
+      "requiresAuth": false,
+      "validationRules": {
+        "responseStructure": {
+          "code": "number",
+          "message": "string",
+          "data": "object"
+        },
+        "dataFields": {
+          "rating": "number",
+          "totalCount": "number",
+          "distribution": "object"
+        }
+      }
+    },
+    {
+      "name": "Get Related Books",
+      "endpoint": "/books/1/related",
+      "method": "GET",
+      "expectedStatus": 200,
+      "maxResponseTime": 200,
+      "requiresAuth": false,
+      "queryParams": {
+        "limit": 4
+      },
+      "validationRules": {
+        "responseStructure": {
+          "code": "number",
+          "message": "string",
+          "data": "array"
+        }
+      }
+    },
+    {
+      "name": "User Login",
+      "endpoint": "/auth/login",
+      "method": "POST",
+      "expectedStatus": 200,
+      "maxResponseTime": 200,
+      "requiresAuth": false,
+      "useAccount": "普通用户",
+      "body": {
+        "account": "wstest",
+        "password": "123456"
+      },
+      "validationRules": {
+        "responseStructure": {
+          "code": "number",
+          "message": "string",
+          "data": "object"
+        },
+        "requiredFields": ["token", "user"]
+      }
+    },
+    {
+      "name": "Get User Profile",
+      "endpoint": "/users/profile",
+      "method": "GET",
+      "expectedStatus": 200,
+      "maxResponseTime": 200,
+      "requiresAuth": true,
+      "useAccount": "普通用户",
+      "validationRules": {
+        "responseStructure": {
+          "code": "number",
+          "message": "string",
+          "data": "object"
+        },
+        "dataFields": {
+          "id": "number",
+          "username": "string",
+          "phone": "string",
+          "email": "string",
+          "avatar": "string",
+          "level": "string",
+          "points": "number",
+          "isSeller": "number",
+          "sellerLevel": "string",
+          "sellerRating": "number",
+          "sellerIsVerified": "number",
+          "sellerDescription": "string",
+          "sellerPositiveRate": "number",
+          "sellerSalesCount": "number",
+          "createdAt": "string",
+          "updatedAt": "string"
+        }
+      }
+    },
+    {
+      "name": "Get My Books",
+      "endpoint": "/users/books",
+      "method": "GET",
+      "expectedStatus": 200,
+      "maxResponseTime": 200,
+      "requiresAuth": true,
+      "useAccount": "普通用户",
+      "queryParams": {
+        "page": 1,
+        "pageSize": 10,
+        "status": 1
+      },
+      "validationRules": {
+        "responseStructure": {
+          "code": "number",
+          "message": "string",
+          "data": "object"
+        },
+        "dataFields": {
+          "list": "array",
+          "total": "number",
+          "page": "number",
+          "pageSize": "number"
+        }
+      }
+    },
+    {
+      "name": "Get My Orders",
+      "endpoint": "/users/orders",
+      "method": "GET",
+      "expectedStatus": 200,
+      "maxResponseTime": 200,
+      "requiresAuth": true,
+      "useAccount": "普通用户",
+      "queryParams": {
+        "page": 1,
+        "pageSize": 10
+      },
+      "validationRules": {
+        "responseStructure": {
+          "code": "number",
+          "message": "string",
+          "data": "object"
+        },
+        "dataFields": {
+          "list": "array",
+          "total": "number",
+          "page": "number",
+          "pageSize": "number"
+        }
+      }
+    },
+    {
+      "name": "Get Favorites",
+      "endpoint": "/users/favorites",
+      "method": "GET",
+      "expectedStatus": 200,
+      "maxResponseTime": 200,
+      "requiresAuth": true,
+      "useAccount": "普通用户",
+      "queryParams": {
+        "page": 1,
+        "pageSize": 10
+      },
+      "validationRules": {
+        "responseStructure": {
+          "code": "number",
+          "message": "string",
+          "data": "object"
+        },
+        "dataFields": {
+          "list": "array",
+          "total": "number",
+          "page": "number",
+          "pageSize": "number"
+        }
+      }
+    }
+  ],
+  "successThreshold": 0.8,
+  "reportFormat": "markdown",
+  "reportPath": "./docs/api-test-report.md"
+}

@@ -16,6 +16,7 @@ Invoke this skill when:
 - User needs to test authentication and authorization flows
 - User wants to check API responses match frontend expectations
 - User is preparing for frontend-backend joint debugging
+- User says "测试接口" (test interface) - this is a trigger phrase for API testing
 
 ## Testing Capabilities
 
@@ -63,16 +64,15 @@ Validates data consistency between frontend and backend:
 
 ### Phase 1: Backend API Testing
 
-1. **Start Backend Server**
-   ```bash
-   cd backend-code
-   mvn spring-boot:run
-   ```
+1. **Verify Backend is Running** (Assumed to be running by default)
+   - Confirm backend service is available at `http://localhost:8080/api`
+   - No need to start backend server manually
 
 2. **Test API Endpoints**
    - Test authentication endpoints (`/auth/login`, `/auth/register`)
    - Test book endpoints (`/books`, `/books/{id}`, `/books/categories`)
    - Test user endpoints (if available)
+   - Test order endpoints (`/users/orders`)
    - Test review endpoints (`/books/{id}/reviews`)
 
 3. **Validate Responses**
@@ -255,20 +255,16 @@ Generate a comprehensive test report with:
 ## Quick Start Commands
 
 ```bash
-# Start backend
-cd backend-code
-mvn spring-boot:run
-
-# Start frontend (new terminal)
+# Start frontend
 npm run dev
 
-# Test API with curl
+# Test API with curl (assuming backend is running)
 curl http://localhost:8080/api/books/categories
 
-# Test API with authentication
+# Test API with authentication (assuming backend is running)
 curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"test","password":"123456"}'
+  -d '{"account":"wstest","password":"123456"}'
 ```
 
 ## Notes
@@ -277,4 +273,6 @@ curl -X POST http://localhost:8080/api/auth/login \
 - Supports REST API architecture
 - Works with JWT authentication
 - Can be adapted for other frameworks
-- Requires both frontend and backend to be running
+- IMPORTANT: Skip checking if backend is running - assume it's available by default (typically on http://localhost:8080)
+- BUT still test actual backend API endpoints to verify functionality
+- Focus on frontend implementation and API integration testing

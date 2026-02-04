@@ -34,3 +34,7 @@ export const uploadFile = (file, type = 'image') => {
     }
   })
 }
+
+export const getMyOrders = (params) => request.get('/users/orders', { params })
+
+export const getFavorites = (params) => request.get('/users/favorites', { params })

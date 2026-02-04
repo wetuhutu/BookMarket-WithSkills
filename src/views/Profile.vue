@@ -186,7 +186,22 @@
           <div v-if="activeTab === 'orders'" class="space-y-6">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">我的订单</h2>
 
-            <div class="space-y-4">
+            <div v-if="ordersLoading" class="text-center py-12">
+              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+              <p class="mt-4 text-gray-600 dark:text-gray-400">加载中...</p>
+            </div>
+
+            <div v-else-if="ordersError" class="text-center py-12">
+              <p class="text-red-600 dark:text-red-400 mb-4">{{ ordersError }}</p>
+              <button @click="fetchOrders" class="btn btn-primary text-sm">重试</button>
+            </div>
+
+            <div v-else-if="orders.length === 0" class="text-center py-12">
+              <div class="text-6xl mb-4">📦</div>
+              <p class="text-gray-600 dark:text-gray-400 mb-4">暂无订单</p>
+            </div>
+
+            <div v-else class="space-y-4">
               <div
                 v-for="order in orders"
                 :key="order.id"
@@ -226,35 +241,117 @@
                   </button>
                 </div>
               </div>
+
+              <!-- 分页 -->
+              <div v-if="ordersPagination.total > ordersPagination.pageSize" class="mt-6 flex justify-center">
+                <div class="flex items-center gap-2">
+                  <button
+                    @click="handleOrderPageChange(ordersPagination.page - 1)"
+                    :disabled="ordersPagination.page === 1"
+                    :class="[
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      ordersPagination.page === 1
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                    ]"
+                  >
+                    上一页
+                  </button>
+                  <span class="text-sm text-gray-600 dark:text-gray-400">
+                    第 {{ ordersPagination.page }} 页，共 {{ Math.ceil(ordersPagination.total / ordersPagination.pageSize) }} 页
+                  </span>
+                  <button
+                    @click="handleOrderPageChange(ordersPagination.page + 1)"
+                    :disabled="ordersPagination.page >= Math.ceil(ordersPagination.total / ordersPagination.pageSize)"
+                    :class="[
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      ordersPagination.page >= Math.ceil(ordersPagination.total / ordersPagination.pageSize)
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                    ]"
+                  >
+                    下一页
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
           <div v-if="activeTab === 'favorites'" class="space-y-6">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">我的收藏</h2>
 
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-              <div
-                v-for="book in favorites"
-                :key="book.id"
-                class="card overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-              >
-                <div class="relative aspect-[3/4] bg-gray-200 dark:bg-gray-700">
-                  <img :src="book.cover" :alt="book.title" class="w-full h-full object-cover">
-                  <button
-                    class="absolute top-2 right-2 p-2 bg-white dark:bg-gray-800 rounded-full shadow hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    @click.stop="removeFavorite(book.id)"
-                  >
-                    <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                    </svg>
-                  </button>
-                </div>
-                <div class="p-4">
-                  <h3 class="font-medium text-gray-900 dark:text-white line-clamp-2 mb-2">{{ book.title }}</h3>
-                  <div class="flex items-center justify-between">
-                    <span class="font-bold text-primary-600 dark:text-primary-400">¥{{ book.price }}</span>
-                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ book.condition }}</span>
+            <div v-if="favoritesLoading" class="text-center py-12">
+              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+              <p class="mt-4 text-gray-600 dark:text-gray-400">加载中...</p>
+            </div>
+
+            <div v-else-if="favoritesError" class="text-center py-12">
+              <p class="text-red-600 dark:text-red-400 mb-4">{{ favoritesError }}</p>
+              <button @click="fetchFavorites" class="btn btn-primary text-sm">重试</button>
+            </div>
+
+            <div v-else-if="favorites.length === 0" class="text-center py-12">
+              <div class="text-6xl mb-4">❤️</div>
+              <p class="text-gray-600 dark:text-gray-400 mb-4">暂无收藏</p>
+            </div>
+
+            <div v-else>
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div
+                  v-for="book in favorites"
+                  :key="book.id"
+                  class="card overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                >
+                  <div class="relative aspect-[3/4] bg-gray-200 dark:bg-gray-700">
+                    <img :src="book.cover" :alt="book.title" class="w-full h-full object-cover">
+                    <button
+                      class="absolute top-2 right-2 p-2 bg-white dark:bg-gray-800 rounded-full shadow hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      @click.stop="removeFavorite(book.id)"
+                    >
+                      <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                      </svg>
+                    </button>
                   </div>
+                  <div class="p-4">
+                    <h3 class="font-medium text-gray-900 dark:text-white line-clamp-2 mb-2">{{ book.title }}</h3>
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-primary-600 dark:text-primary-400">¥{{ book.price }}</span>
+                      <span class="text-xs text-gray-500 dark:text-gray-400">{{ book.condition }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="favoritesPagination.total > favoritesPagination.pageSize" class="mt-6 flex justify-center">
+                <div class="flex items-center gap-2">
+                  <button
+                    @click="handleFavoritesPageChange(favoritesPagination.page - 1)"
+                    :disabled="favoritesPagination.page === 1"
+                    :class="[
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      favoritesPagination.page === 1
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                    ]"
+                  >
+                    上一页
+                  </button>
+                  <span class="text-sm text-gray-600 dark:text-gray-400">
+                    第 {{ favoritesPagination.page }} 页，共 {{ Math.ceil(favoritesPagination.total / favoritesPagination.pageSize) }} 页
+                  </span>
+                  <button
+                    @click="handleFavoritesPageChange(favoritesPagination.page + 1)"
+                    :disabled="favoritesPagination.page >= Math.ceil(favoritesPagination.total / favoritesPagination.pageSize)"
+                    :class="[
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      favoritesPagination.page >= Math.ceil(favoritesPagination.total / favoritesPagination.pageSize)
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                    ]"
+                  >
+                    下一页
+                  </button>
                 </div>
               </div>
             </div>
@@ -328,7 +425,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { getUserProfile, updateUserProfile, getMyBooks, uploadFile } from '@/api'
+import { getUserProfile, updateUserProfile, getMyBooks, uploadFile, getMyOrders, getFavorites } from '@/api'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -373,8 +470,23 @@ const myBooksPagination = ref({
 })
 
 const orders = ref([])
+const ordersLoading = ref(false)
+const ordersError = ref(null)
+const ordersPagination = ref({
+  page: 1,
+  pageSize: 10,
+  total: 0,
+  status: '' // 可选的状态筛选
+})
 
 const favorites = ref([])
+const favoritesLoading = ref(false)
+const favoritesError = ref(null)
+const favoritesPagination = ref({
+  page: 1,
+  pageSize: 10,
+  total: 0
+})
 
 const settings = ref({
   name: '',
@@ -445,17 +557,38 @@ onMounted(() => {
 watch(activeTab, (newTab) => {
   if (newTab === 'my-books' && myBooks.value.length === 0) {
     fetchMyBooks()
+  } else if (newTab === 'orders' && orders.value.length === 0) {
+    fetchOrders()
+  } else if (newTab === 'favorites' && favorites.value.length === 0) {
+    fetchFavorites()
   }
 })
 
 const getOrderStatusClass = (status) => {
+  // 处理中文状态和英文状态
+  const normalizedStatus = {
+    '待付款': 'pending',
+    '待发货': 'paid', 
+    '已发货': 'shipped',
+    '已收货': 'received',
+    '已取消': 'cancelled',
+    'pending': 'pending',
+    'paid': 'paid',
+    'shipped': 'shipped',
+    'received': 'received',
+    'cancelled': 'cancelled'
+  }[status] || status;
+
   const classes = {
-    '待收货': 'bg-yellow-100 text-yellow-600',
-    '已完成': 'bg-green-100 text-green-600',
-    '已取消': 'bg-gray-100 text-gray-600'
-  }
-  return classes[status] || 'bg-gray-100 text-gray-600'
-}
+    'pending': 'bg-yellow-100 text-yellow-600',
+    'paid': 'bg-blue-100 text-blue-600',
+    'shipped': 'bg-purple-100 text-purple-600',
+    'received': 'bg-green-100 text-green-600',
+    'cancelled': 'bg-gray-100 text-gray-600'
+  };
+  
+  return classes[normalizedStatus] || 'bg-gray-100 text-gray-600';
+};
 
 const removeFavorite = (id) => {
   favorites.value = favorites.value.filter(book => book.id !== id)
@@ -499,6 +632,11 @@ const handleStatusChange = (status) => {
   fetchMyBooks()
 }
 
+const handleOrderPageChange = (page) => {
+  ordersPagination.value.page = page
+  fetchOrders()
+}
+
 const handleSaveSettings = async () => {
   try {
     const updateData = {
@@ -533,4 +671,102 @@ const handleSaveSettings = async () => {
     alert('保存失败，请稍后重试')
   }
 }
+
+const fetchOrders = async () => {
+  try {
+    ordersLoading.value = true
+    ordersError.value = null
+    
+    const params = {
+      page: ordersPagination.value.page,
+      pageSize: ordersPagination.value.pageSize,
+      status: ordersPagination.value.status || undefined // 如果为空字符串则不传递该参数
+    }
+    
+    const response = await getMyOrders(params)
+    
+    if (response.code === 200 && response.data) {
+      // 将后端返回的订单数据格式化为前端所需格式
+      orders.value = (response.data.list || []).map(order => ({
+        id: order.id || order.orderNo || order.id,
+        time: order.createdAt || order.paidAt || order.shippedAt || order.receivedAt || '未知时间',
+        status: order.status || order.paymentStatus || '未知状态',
+        bookCover: order.bookCover || order.cover || '',
+        bookTitle: order.bookTitle || order.title || '未知书籍',
+        seller: order.sellerName || order.seller || '未知卖家',
+        price: order.totalPrice || order.bookPrice || 0,
+        quantity: order.quantity || 1
+      }))
+      ordersPagination.value.total = response.data.total || 0
+    } else {
+      ordersError.value = response.message || '获取订单失败'
+    }
+  } catch (err) {
+    console.error('获取订单失败:', err)
+    ordersError.value = '获取订单失败，请检查登录状态'
+    if (err.response?.status === 403) {
+      router.push('/login')
+    }
+  } finally {
+    ordersLoading.value = false
+  }
+}
+
+const fetchFavorites = async () => {
+  try {
+    favoritesLoading.value = true
+    favoritesError.value = null
+    
+    const params = {
+      page: favoritesPagination.value.page,
+      pageSize: favoritesPagination.value.pageSize
+    }
+    
+    const response = await getFavorites(params)
+    
+    if (response.code === 200 && response.data) {
+      // 处理pageSize参数不生效的问题，前端手动分页
+      let allBooks = (response.data.list || []).map(item => ({
+        id: item.book.id,
+        bookId: item.bookId,
+        title: item.book.title || '未知书名',
+        author: item.book.author || '未知作者',
+        cover: item.book.cover || '/default-cover.jpg',
+        price: item.book.price || 0,
+        originalPrice: item.book.originalPrice || 0,
+        condition: item.book.condition || '未知',
+        categoryId: item.book.categoryId || 'other',
+        createdAt: item.createdAt
+      }))
+      
+      // 如果后端返回的pageSize不正确，前端手动处理分页
+      if (response.data.pageSize !== favoritesPagination.value.pageSize) {
+        const startIndex = (favoritesPagination.value.page - 1) * favoritesPagination.value.pageSize
+        const endIndex = startIndex + favoritesPagination.value.pageSize
+        favorites.value = allBooks.slice(startIndex, endIndex)
+      } else {
+        favorites.value = allBooks
+      }
+      
+      favoritesPagination.value.total = response.data.total || 0
+    } else {
+      favoritesError.value = response.message || '获取收藏列表失败'
+    }
+  } catch (err) {
+    console.error('获取收藏列表失败:', err)
+    favoritesError.value = '获取收藏列表失败，请检查登录状态'
+    if (err.response?.status === 403) {
+      router.push('/login')
+    }
+  } finally {
+    favoritesLoading.value = false
+  }
+}
+
+const handleFavoritesPageChange = (page) => {
+  favoritesPagination.value.page = page
+  fetchFavorites()
+}
+
+
 </script>
