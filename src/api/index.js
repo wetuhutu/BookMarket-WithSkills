@@ -38,3 +38,7 @@ export const uploadFile = (file, type = 'image') => {
 export const getMyOrders = (params) => request.get('/users/orders', { params })
 
 export const getFavorites = (params) => request.get('/users/favorites', { params })
+
+export const addFavorite = (bookId) => request.post('/users/favorites', { bookId })
+
+export const removeFavorite = (bookId) => request.delete(`/users/favorites/${bookId}`)

@@ -319,6 +319,41 @@
           "pageSize": "number"
         }
       }
+    },
+    {
+      "name": "Add Favorite",
+      "endpoint": "/users/favorites",
+      "method": "POST",
+      "expectedStatus": 200,
+      "maxResponseTime": 200,
+      "requiresAuth": true,
+      "useAccount": "普通用户",
+      "body": {
+        "bookId": 1
+      },
+      "validationRules": {
+        "responseStructure": {
+          "code": "number",
+          "message": "string",
+          "data": "null"
+        }
+      }
+    },
+    {
+      "name": "Remove Favorite",
+      "endpoint": "/users/favorites/1",
+      "method": "DELETE",
+      "expectedStatus": 200,
+      "maxResponseTime": 200,
+      "requiresAuth": true,
+      "useAccount": "普通用户",
+      "validationRules": {
+        "responseStructure": {
+          "code": "number",
+          "message": "string",
+          "data": "null"
+        }
+      }
     }
   ],
   "successThreshold": 0.8,

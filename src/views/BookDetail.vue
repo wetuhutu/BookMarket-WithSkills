@@ -152,7 +152,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getBookDetail, getBookReviews, getBookReviewsStatistics, getBookRelated } from '@/api/index'
+import { getBookDetail, getBookReviews, getBookReviewsStatistics, getBookRelated, addFavorite, removeFavorite, getFavorites } from '@/api/index'
 import { formatRelativeTime } from '@/utils/format'
 
 const route = useRoute()
@@ -209,8 +209,44 @@ const fetchRelated = async () => {
   }
 }
 
-const toggleWishlist = () => {
-  isWishlisted.value = !isWishlisted.value
+const checkFavoriteStatus = async () => {
+  try {
+    const res = await getFavorites({ page: 1, pageSize: 100 })
+    if (res.code === 200 && res.data) {
+      const favoriteBooks = res.data.list || []
+      isWishlisted.value = favoriteBooks.some(item => item.bookId === parseInt(route.params.id))
+    }
+  } catch (error) {
+    console.error('检查收藏状态失败:', error)
+  }
+}
+
+const toggleWishlist = async () => {
+  try {
+    if (isWishlisted.value) {
+      const res = await removeFavorite(route.params.id)
+      if (res.code === 200 || res.message === '取消收藏成功') {
+        isWishlisted.value = false
+        alert('已取消收藏')
+      } else {
+        alert(res.message || '取消收藏失败')
+      }
+    } else {
+      const res = await addFavorite(route.params.id)
+      if (res.code === 200 || res.message === '收藏成功') {
+        isWishlisted.value = true
+        alert('收藏成功')
+      } else if (res.message === 'Duplicate') {
+        alert('该书籍已在收藏列表中')
+        isWishlisted.value = true
+      } else {
+        alert(res.message || '收藏失败')
+      }
+    }
+  } catch (error) {
+    console.error('收藏操作失败:', error)
+    alert('操作失败，请稍后重试')
+  }
 }
 
 const goToDetail = (id) => {
@@ -224,6 +260,7 @@ onMounted(async () => {
     fetchStatistics(),
     fetchRelated()
   ])
+  await checkFavoriteStatus()
   loading.value = false
 })
 </script>

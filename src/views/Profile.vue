@@ -301,12 +301,13 @@
                   v-for="book in favorites"
                   :key="book.id"
                   class="card overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  @click="goToBookDetail(book.bookId)"
                 >
                   <div class="relative aspect-[3/4] bg-gray-200 dark:bg-gray-700">
                     <img :src="book.cover" :alt="book.title" class="w-full h-full object-cover">
                     <button
                       class="absolute top-2 right-2 p-2 bg-white dark:bg-gray-800 rounded-full shadow hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      @click.stop="removeFavorite(book.id)"
+                      @click.stop="removeFavorite(book.bookId)"
                     >
                       <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
@@ -425,7 +426,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { getUserProfile, updateUserProfile, getMyBooks, uploadFile, getMyOrders, getFavorites } from '@/api'
+import { getUserProfile, updateUserProfile, getMyBooks, uploadFile, getMyOrders, getFavorites, removeFavorite as removeFavoriteApi } from '@/api'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -590,8 +591,19 @@ const getOrderStatusClass = (status) => {
   return classes[normalizedStatus] || 'bg-gray-100 text-gray-600';
 };
 
-const removeFavorite = (id) => {
-  favorites.value = favorites.value.filter(book => book.id !== id)
+const removeFavorite = async (id) => {
+  try {
+    const res = await removeFavoriteApi(id)
+    if (res.code === 200 || res.message === '取消收藏成功') {
+      alert('已取消收藏')
+      await fetchFavorites()
+    } else {
+      alert(res.message || '取消收藏失败')
+    }
+  } catch (error) {
+    console.error('取消收藏失败:', error)
+    alert('取消收藏失败，请稍后重试')
+  }
 }
 
 const fetchMyBooks = async () => {
@@ -766,6 +778,10 @@ const fetchFavorites = async () => {
 const handleFavoritesPageChange = (page) => {
   favoritesPagination.value.page = page
   fetchFavorites()
+}
+
+const goToBookDetail = (bookId) => {
+  router.push(`/books/${bookId}`)
 }
 
 
