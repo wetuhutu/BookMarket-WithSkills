@@ -28,11 +28,7 @@ export const uploadFile = (file, type = 'image') => {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('type', type)
-  return request.post('/upload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  })
+  return request.post('/upload', formData)
 }
 
 export const getMyOrders = (params) => request.get('/users/orders', { params })
@@ -42,3 +38,5 @@ export const getFavorites = (params) => request.get('/users/favorites', { params
 export const addFavorite = (bookId) => request.post('/users/favorites', { bookId })
 
 export const removeFavorite = (bookId) => request.delete(`/users/favorites/${bookId}`)
+
+export const createBook = (data) => request.post('/users/books', data)

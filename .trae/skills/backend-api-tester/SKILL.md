@@ -7,6 +7,19 @@ description: "Tests backend APIs, validates data formats against frontend specif
 
 This skill performs comprehensive backend API testing, validates data formats against frontend specifications, and generates standardized test reports.
 
+## ⚠️ Important Prerequisites
+
+**Before using this skill, ensure the following:**
+
+1. **Backend Server Must Be Running**: This skill **does NOT check if the backend is running**. It assumes the backend server is already running and accessible at the configured `backendUrl`. If the backend is not running, all test cases will fail with connection errors.
+
+2. **Windows Users**: On Windows systems, this skill uses **PowerShell** for HTTP requests. The skill automatically detects the operating system and selects the appropriate HTTP client:
+   - **Windows**: PowerShell (`Invoke-RestMethod`)
+   - **Linux/Mac**: curl command
+   - **Node.js**: axios (if available)
+
+3. **Manual Backend Start**: You must manually ensure the backend server is running before invoking this skill. The skill will not attempt to start or restart the backend server.
+
 ## When to Use
 
 Invoke this skill when:
@@ -584,10 +597,32 @@ npm run test:api -- --account="admin"
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `responseStructure` | object | Expected structure of response |
-| `dataFields` | array | Expected fields in data array |
+| `dataFields` | array or object | Expected fields in data (array format for array data, object format for object data) |
 | `requiredFields` | array | List of required fields |
 | `typeChecks` | object | Type checks for specific fields |
 | `valueConstraints` | object | Value constraints (min, max, enum) |
+
+**Important Notes on `dataFields`**:
+- When `data` is an **array**, use **array format** to describe fields in each array item:
+  ```json
+  "dataFields": [
+    {
+      "name": "string",
+      "id": "string",
+      "icon": "string",
+      "count": "number"
+    }
+  ]
+  ```
+- When `data` is an **object**, use **object format** to describe fields in the object:
+  ```json
+  "dataFields": {
+    "list": "array",
+    "total": "number",
+    "page": "number",
+    "pageSize": "number"
+  }
+  ```
 
 ## Implementation Details
 
@@ -817,25 +852,7 @@ This skill can work with the integration-testing skill to:
 
 ## Common Issues and Solutions
 
-### Issue 1: Backend Not Running
-
-**Symptom**: Connection refused or timeout
-
-**Solution**:
-- Ensure backend server is running
-- Check backend URL in configuration
-- Verify network connectivity
-
-### Issue 2: CORS Errors
-
-**Symptom**: Browser shows CORS policy error
-
-**Solution**:
-- Check backend CORS configuration
-- Ensure frontend URL is in allowed origins
-- Use server-side testing instead of browser
-
-### Issue 3: Authentication Required
+### Issue 2: Authentication Required
 
 **Symptom**: 401 Unauthorized errors
 
@@ -844,7 +861,7 @@ This skill can work with the integration-testing skill to:
 - Check if auto-login is enabled
 - Verify token is being sent correctly
 
-### Issue 4: Data Type Mismatches
+### Issue 3: Data Type Mismatches
 
 **Symptom**: Type validation failures
 
@@ -853,7 +870,7 @@ This skill can work with the integration-testing skill to:
 - Add type conversion utilities
 - Document expected types in API spec
 
-### Issue 5: Token Expiration
+### Issue 4: Token Expiration
 
 **Symptom**: 401 errors after some time
 
@@ -920,7 +937,28 @@ npm run api-test -- --config=./custom-config.json
 
 ## Notes
 
-- This skill assumes backend is already running (does not start backend)
+### Important Prerequisites
+
+- **Backend Status**: This skill **does NOT check if backend is running** before testing. It assumes the backend server is already running and accessible at the configured `backendUrl`. If the backend is not running, all test cases will fail with connection errors.
+- **Windows Users**: On Windows systems, this skill uses **PowerShell** for HTTP requests. The skill automatically detects the operating system and selects the appropriate HTTP client (PowerShell for Windows, curl for Linux/Mac, or Node.js/axios if available).
+- **Manual Backend Start**: You must ensure the backend server is running before invoking this skill. The skill will not attempt to start or restart the backend server.
+
+### Platform-Specific Behavior
+
+| Platform | HTTP Client | Command Used |
+|----------|-------------|--------------|
+| Windows | PowerShell | `Invoke-RestMethod` |
+| Linux/Mac | curl | `curl` command |
+| Node.js | axios | `axios` library (if available) |
+
+### Error Handling
+
+- If backend is not running: All tests will fail with connection refused or timeout errors
+- If authentication fails: Check test account credentials in configuration
+- If CORS errors occur: Ensure backend CORS configuration allows the test origin
+
+### Additional Notes
+
 - Supports REST API architecture
 - Works with various authentication methods (JWT, OAuth, etc.)
 - Can be adapted for different backend frameworks

@@ -99,10 +99,34 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   分类 <span class="text-red-500">*</span>
                 </label>
-                <select v-model="form.category" class="input" required>
+                <select v-model="form.categoryId" class="input" required>
                   <option value="">请选择分类</option>
-                  <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+                  <option v-for="cat in categories" :key="cat.value" :value="cat.value">{{ cat.label }}</option>
                 </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  出版时间
+                </label>
+                <input
+                  v-model="form.publishDate"
+                  type="month"
+                  class="input"
+                >
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  页数
+                </label>
+                <input
+                  v-model.number="form.pages"
+                  type="number"
+                  placeholder="请输入页数"
+                  class="input"
+                >
               </div>
             </div>
 
@@ -116,6 +140,52 @@
                 placeholder="请描述书籍的详细信息、使用情况等"
                 class="input"
               ></textarea>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                书籍图片（选填）
+              </label>
+              <div class="flex items-center space-x-4">
+                <input
+                  ref="additionalImagesInput"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  class="hidden"
+                  @change="handleAdditionalImagesChange"
+                >
+                <button 
+                  type="button" 
+                  class="btn btn-secondary text-sm" 
+                  @click="additionalImagesInput?.click()"
+                >
+                  选择图片
+                </button>
+                <p class="text-sm text-gray-600 dark:text-gray-400">可上传多张图片展示书籍内页</p>
+              </div>
+              
+              <div v-if="imagePreviews.length > 0" class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <div 
+                  v-for="(preview, index) in imagePreviews" 
+                  :key="index"
+                  class="relative group"
+                >
+                  <img 
+                    :src="preview" 
+                    class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                  >
+                  <button
+                    type="button"
+                    @click="removeImage(index)"
+                    class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -158,101 +228,38 @@
               折扣：{{ Math.round((1 - form.price / form.originalPrice) * 100) }}% · 省 ¥{{ (form.originalPrice - form.price).toFixed(2) }}
             </p>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                成色 <span class="text-red-500">*</span>
-              </label>
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <label
-                  v-for="condition in conditions"
-                  :key="condition.value"
-                  :class="[
-                    'card p-4 cursor-pointer transition-all',
-                    form.condition === condition.value
-                      ? 'border-primary-500 ring-2 ring-primary-500'
-                      : 'hover:border-primary-300'
-                  ]"
-                >
-                  <input
-                    v-model="form.condition"
-                    :value="condition.value"
-                    type="radio"
-                    class="hidden"
-                  >
-                  <div class="text-center">
-                    <div class="text-2xl mb-2">{{ condition.icon }}</div>
-                    <div class="font-medium text-gray-900 dark:text-white">{{ condition.label }}</div>
-                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">{{ condition.desc }}</div>
-                  </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  库存数量 <span class="text-red-500">*</span>
                 </label>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card p-8">
-          <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">联系方式</h2>
-          
-          <div class="space-y-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                交易方式 <span class="text-red-500">*</span>
-              </label>
-              <div class="flex flex-wrap gap-4">
-                <label
-                  v-for="method in tradeMethods"
-                  :key="method.value"
-                  :class="[
-                    'card px-4 py-3 cursor-pointer transition-all',
-                    form.tradeMethod === method.value
-                      ? 'border-primary-500 ring-2 ring-primary-500'
-                      : 'hover:border-primary-300'
-                  ]"
+                <input
+                  v-model.number="form.stock"
+                  type="number"
+                  min="1"
+                  placeholder="请输入库存数量"
+                  class="input"
+                  required
                 >
-                  <input
-                    v-model="form.tradeMethod"
-                    :value="method.value"
-                    type="radio"
-                    class="hidden"
-                  >
-                  <div class="flex items-center space-x-2">
-                    <span class="text-xl">{{ method.icon }}</span>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ method.label }}</span>
-                  </div>
-                </label>
               </div>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                交易地点
-              </label>
-              <input
-                v-model="form.location"
-                type="text"
-                placeholder="请输入交易地点（如：图书馆、食堂等）"
-                class="input"
-              >
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                联系方式 <span class="text-red-500">*</span>
-              </label>
-              <input
-                v-model="form.contact"
-                type="text"
-                placeholder="请输入微信号或手机号"
-                class="input"
-                required
-              >
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  成色 <span class="text-red-500">*</span>
+                </label>
+                <select v-model="form.condition" class="input" required>
+                  <option value="">请选择成色</option>
+                  <option v-for="condition in conditions" :key="condition.value" :value="condition.value">
+                    {{ condition.label }}
+                  </option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
 
         <div class="flex space-x-4">
-          <button type="submit" class="flex-1 btn btn-primary text-lg py-3">
-            立即发布
+          <button type="submit" class="flex-1 btn btn-primary text-lg py-3" :disabled="submitting">
+            {{ submitting ? '发布中...' : '立即发布' }}
           </button>
           <button type="button" class="btn btn-secondary text-lg px-8" @click="handleCancel">
             取消
@@ -266,60 +273,137 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { uploadFile, createBook } from '@/api/index'
 
 const router = useRouter()
 
 const fileInput = ref(null)
+const additionalImagesInput = ref(null)
+const imagePreviews = ref([])
+const submitting = ref(false)
 
 const form = ref({
   cover: '',
   title: '',
   author: '',
   publisher: '',
-  isbn: '',
-  category: '',
-  description: '',
-  originalPrice: '',
+  publishDate: '',
+  pages: null,
+  categoryId: '',
+  condition: '九成新',
   price: '',
-  condition: '',
-  tradeMethod: 'offline',
-  location: '',
-  contact: ''
+  originalPrice: '',
+  stock: 1,
+  images: [],
+  description: ''
 })
 
-const categories = ['教材教辅', '文学小说', '计算机', '经管', '外语', '其他']
-
-const conditions = [
-  { value: '全新', label: '全新', icon: '✨', desc: '未使用过' },
-  { value: '九成新', label: '九成新', icon: '📚', desc: '轻微使用痕迹' },
-  { value: '八成新', label: '八成新', icon: '📖', desc: '正常使用痕迹' },
-  { value: '七成新', label: '七成新', icon: '📕', desc: '明显使用痕迹' }
+const categories = [
+  { value: 'textbook', label: '教材教辅' },
+  { value: 'novel', label: '文学小说' },
+  { value: 'computer', label: '计算机' },
+  { value: 'management', label: '经管' },
+  { value: 'language', label: '外语' },
+  { value: 'other', label: '其他' }
 ]
 
-const tradeMethods = [
-  { value: 'offline', label: '线下交易', icon: '📍' },
-  { value: 'online', label: '邮寄', icon: '📦' },
-  { value: 'both', label: '均可', icon: '🔄' }
+const conditions = [
+  { value: '全新', label: '全新' },
+  { value: '九成新', label: '九成新' },
+  { value: '八成新', label: '八成新' },
+  { value: '七成新', label: '七成新' },
+  { value: '六成新', label: '六成新' }
 ]
 
 const triggerFileInput = () => {
   fileInput.value?.click()
 }
 
-const handleFileChange = (event) => {
+const handleFileChange = async (event) => {
   const file = event.target.files[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      form.value.cover = e.target.result
-    }
-    reader.readAsDataURL(file)
+  if (!file) {
+    return
+  }
+
+  try {
+    submitting.value = true
+    const response = await uploadFile(file, 'cover')
+    form.value.cover = response.data
+  } catch (error) {
+    console.error('封面上传失败:', error)
+    alert('封面上传失败，请重试')
+  } finally {
+    submitting.value = false
   }
 }
 
-const handleSubmit = () => {
-  alert('书籍发布成功！')
-  router.push('/books')
+const handleAdditionalImagesChange = async (event) => {
+  const files = Array.from(event.target.files)
+  if (files.length === 0) {
+    return
+  }
+
+  try {
+    submitting.value = true
+    for (const file of files) {
+      const response = await uploadFile(file, 'image')
+      form.value.images.push(response.data)
+      imagePreviews.value.push(response.data)
+    }
+  } catch (error) {
+    console.error('图片上传失败:', error)
+    alert('图片上传失败，请重试')
+  } finally {
+    submitting.value = false
+  }
+}
+
+const removeImage = (index) => {
+  form.value.images.splice(index, 1)
+  imagePreviews.value.splice(index, 1)
+}
+
+const handleSubmit = async () => {
+  if (!form.value.title || !form.value.author || !form.value.categoryId || 
+      !form.value.condition || !form.value.price || !form.value.originalPrice || 
+      !form.value.cover) {
+    alert('请填写所有必填项')
+    return
+  }
+
+  try {
+    submitting.value = true
+    const bookData = {
+      title: form.value.title,
+      author: form.value.author,
+      isbn: form.value.isbn || undefined,
+      publisher: form.value.publisher || undefined,
+      publishDate: form.value.publishDate || undefined,
+      pages: form.value.pages || undefined,
+      categoryId: form.value.categoryId,
+      condition: form.value.condition,
+      price: parseFloat(form.value.price),
+      originalPrice: parseFloat(form.value.originalPrice),
+      stock: parseInt(form.value.stock) ||1,
+      cover: form.value.cover,
+      images: form.value.images,
+      description: form.value.description || undefined
+    }
+
+    const response = await createBook(bookData)
+    
+    if (response.code === 200) {
+      alert('书籍发布成功！')
+      router.push('/books')
+    } else {
+      alert(response.message || '发布失败')
+    }
+  } catch (error) {
+    console.error('发布书籍失败:', error)
+    alert(error.response?.data?.message || '发布失败，请重试')
+  } finally {
+    submitting.value = false
+  }
 }
 
 const handleCancel = () => {

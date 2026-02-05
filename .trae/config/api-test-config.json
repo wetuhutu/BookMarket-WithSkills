@@ -354,6 +354,82 @@
           "data": "null"
         }
       }
+    },
+    {
+      "name": "Upload Image",
+      "endpoint": "/upload",
+      "method": "POST",
+      "expectedStatus": 200,
+      "maxResponseTime": 5000,
+      "requiresAuth": true,
+      "useAccount": "普通用户",
+      "validationRules": {
+        "responseStructure": {
+          "code": "number",
+          "message": "string",
+          "data": "object"
+        },
+        "dataFields": {
+          "url": "string",
+          "filename": "string",
+          "size": "number"
+        }
+      }
+    },
+    {
+      "name": "Create Book",
+      "endpoint": "/users/books",
+      "method": "POST",
+      "expectedStatus": 200,
+      "maxResponseTime": 2000,
+      "requiresAuth": true,
+      "useAccount": "普通用户",
+      "body": {
+        "title": "测试书籍-自动化测试专用",
+        "author": "测试作者",
+        "isbn": "9787040396638",
+        "publisher": "测试出版社",
+        "publishDate": "2024-01",
+        "pages": 200,
+        "categoryId": "textbook",
+        "condition": "九成新",
+        "price": 25.50,
+        "originalPrice": 50.00,
+        "stock": 1,
+        "cover": "https://example.com/test-cover.jpg",
+        "images": [
+          "https://example.com/test-image1.jpg"
+        ],
+        "description": "这是一本用于API测试的书籍，不会实际发布"
+      },
+      "validationRules": {
+        "responseStructure": {
+          "code": "number",
+          "message": "string",
+          "data": "object"
+        },
+        "dataFields": {
+          "id": "number",
+          "title": "string",
+          "author": "string",
+          "isbn": "string",
+          "publisher": "string",
+          "publishDate": "string",
+          "pages": "number",
+          "categoryId": "string",
+          "condition": "string",
+          "price": "number",
+          "originalPrice": "number",
+          "stock": "number",
+          "cover": "string",
+          "images": "string",
+          "description": "string",
+          "sellerId": "number",
+          "status": "number",
+          "createdAt": "string",
+          "updatedAt": "string"
+        }
+      }
     }
   ],
   "successThreshold": 0.8,
