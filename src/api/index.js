@@ -40,3 +40,11 @@ export const addFavorite = (bookId) => request.post('/users/favorites', { bookId
 export const removeFavorite = (bookId) => request.delete(`/users/favorites/${bookId}`)
 
 export const createBook = (data) => request.post('/users/books', data)
+
+export const createOrder = (data) => request.post('/orders', data)
+
+export const getOrderDetail = (orderId) => request.get(`/orders/${orderId}`)
+
+export const cancelOrder = (orderId, reason) => request.put(`/orders/${orderId}/cancel`, { reason })
+
+export const confirmOrder = (orderId) => request.put(`/orders/${orderId}/confirm`)

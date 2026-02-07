@@ -17,6 +17,16 @@ const routes = [
     component: () => import('@/views/BookDetail.vue')
   },
   {
+    path: '/orders/:id',
+    name: 'order-detail',
+    component: () => import('@/views/OrderDetail.vue')
+  },
+  {
+    path: '/payment/:id',
+    name: 'payment',
+    component: () => import('@/views/Payment.vue')
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('@/views/Login.vue')

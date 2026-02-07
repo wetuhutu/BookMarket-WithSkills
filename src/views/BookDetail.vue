@@ -76,8 +76,12 @@
           </div>
 
           <div class="flex space-x-4">
-            <button class="flex-1 btn btn-primary text-lg py-3">
-              立即购买
+            <button 
+              class="flex-1 btn btn-primary text-lg py-3" 
+              :disabled="purchasing"
+              @click="handlePurchase"
+            >
+              {{ purchasing ? '处理中...' : '立即购买' }}
             </button>
             <button class="flex-1 btn btn-secondary text-lg py-3">
               联系卖家
@@ -152,13 +156,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getBookDetail, getBookReviews, getBookReviewsStatistics, getBookRelated, addFavorite, removeFavorite, getFavorites } from '@/api/index'
+import { getBookDetail, getBookReviews, getBookReviewsStatistics, getBookRelated, addFavorite, removeFavorite, getFavorites, createOrder } from '@/api/index'
 import { formatRelativeTime } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
 
 const loading = ref(true)
+const purchasing = ref(false)
 const isWishlisted = ref(false)
 const book = ref(null)
 const reviews = ref([])
@@ -246,6 +251,53 @@ const toggleWishlist = async () => {
   } catch (error) {
     console.error('收藏操作失败:', error)
     alert('操作失败，请稍后重试')
+  }
+}
+
+const handlePurchase = async () => {
+  if (!book.value) {
+    alert('书籍信息加载失败')
+    return
+  }
+
+  const token = localStorage.getItem('token')
+  if (!token) {
+    alert('请先登录')
+    router.push('/login')
+    return
+  }
+
+  if (book.value.stock <= 0) {
+    alert('该书籍已售罄')
+    return
+  }
+
+  try {
+    purchasing.value = true
+    const orderData = {
+      bookId: book.value.id,
+      quantity: 1,
+      sellerId: book.value.sellerId
+    }
+
+    const response = await createOrder(orderData)
+
+    if (response.code === 200 && response.data) {
+      alert('订单创建成功！')
+      router.push(`/orders/${response.data.id}`)
+    } else {
+      alert(response.message || '订单创建失败')
+    }
+  } catch (error) {
+    console.error('创建订单失败:', error)
+    if (error.response?.status === 401) {
+      alert('登录已过期，请重新登录')
+      router.push('/login')
+    } else {
+      alert(error.response?.data?.message || '订单创建失败，请稍后重试')
+    }
+  } finally {
+    purchasing.value = false
   }
 }
 

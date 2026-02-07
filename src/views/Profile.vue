@@ -205,18 +205,19 @@
               <div
                 v-for="order in orders"
                 :key="order.id"
-                class="card p-6"
+                class="card p-6 cursor-pointer hover:shadow-lg transition-shadow"
+                @click="goToOrderDetail(order.id)"
               >
                 <div class="flex items-start justify-between mb-4">
                   <div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">订单号：{{ order.id }}</div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">{{ order.time }}</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">订单号：{{ order.orderNo }}</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">{{ order.createdAt }}</div>
                   </div>
                   <span :class="[
                     'px-3 py-1 rounded-full text-sm font-medium',
                     getOrderStatusClass(order.status)
                   ]">
-                    {{ order.status }}
+                    {{ getOrderStatusText(order.status) }}
                   </span>
                 </div>
 
@@ -224,17 +225,27 @@
                   <img :src="order.bookCover" :alt="order.bookTitle" class="w-16 h-20 object-cover rounded">
                   <div class="flex-1">
                     <h3 class="font-semibold text-gray-900 dark:text-white">{{ order.bookTitle }}</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ order.seller }}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">卖家：{{ order.sellerName }}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">数量：{{ order.quantity }}</p>
                   </div>
                   <div class="text-right">
-                    <div class="text-lg font-bold text-gray-900 dark:text-white">¥{{ order.price }}</div>
+                    <div class="text-lg font-bold text-gray-900 dark:text-white">¥{{ order.totalPrice }}</div>
+                    <div v-if="order.quantity > 1" class="text-sm text-gray-400">单价 ¥{{ order.price }}</div>
                   </div>
                 </div>
 
-                <div class="flex justify-end space-x-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex justify-end space-x-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700" @click.stop>
                   <button class="btn btn-secondary text-sm">联系卖家</button>
                   <button
-                    v-if="order.status === '待收货'"
+                    v-if="order.status === 'pending'"
+                    @click="handleCancelOrder(order.id)"
+                    class="btn btn-secondary text-sm"
+                  >
+                    取消订单
+                  </button>
+                  <button
+                    v-if="order.status === 'shipped'"
+                    @click="handleConfirmOrder(order.id)"
                     class="btn btn-primary text-sm"
                   >
                     确认收货
@@ -426,7 +437,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { getUserProfile, updateUserProfile, getMyBooks, uploadFile, getMyOrders, getFavorites, removeFavorite as removeFavoriteApi } from '@/api'
+import { getUserProfile, updateUserProfile, getMyBooks, uploadFile, getMyOrders, getFavorites, removeFavorite as removeFavoriteApi, cancelOrder, confirmOrder } from '@/api'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -566,7 +577,6 @@ watch(activeTab, (newTab) => {
 })
 
 const getOrderStatusClass = (status) => {
-  // 处理中文状态和英文状态
   const normalizedStatus = {
     '待付款': 'pending',
     '待发货': 'paid', 
@@ -581,14 +591,64 @@ const getOrderStatusClass = (status) => {
   }[status] || status;
 
   const classes = {
-    'pending': 'bg-yellow-100 text-yellow-600',
-    'paid': 'bg-blue-100 text-blue-600',
-    'shipped': 'bg-purple-100 text-purple-600',
-    'received': 'bg-green-100 text-green-600',
-    'cancelled': 'bg-gray-100 text-gray-600'
+    'pending': 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-400',
+    'paid': 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400',
+    'shipped': 'bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400',
+    'received': 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400',
+    'cancelled': 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
   };
   
-  return classes[normalizedStatus] || 'bg-gray-100 text-gray-600';
+  return classes[normalizedStatus] || 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
+};
+
+const getOrderStatusText = (status) => {
+  const statusMap = {
+    'pending': '待付款',
+    'paid': '待发货',
+    'shipped': '已发货',
+    'received': '已收货',
+    'cancelled': '已取消'
+  };
+  return statusMap[status] || status;
+};
+
+const handleCancelOrder = async (orderId) => {
+  const reason = prompt('请输入取消订单的原因（可选）')
+  if (reason === null) {
+    return
+  }
+
+  try {
+    const response = await cancelOrder(orderId, reason)
+    if (response.code === 200) {
+      alert('订单已取消')
+      await fetchOrders()
+    } else {
+      alert(response.message || '取消订单失败')
+    }
+  } catch (error) {
+    console.error('取消订单失败:', error)
+    alert(error.response?.data?.message || '取消订单失败，请稍后重试')
+  }
+};
+
+const handleConfirmOrder = async (orderId) => {
+  if (!confirm('确认收货后，订单将完成。确定要确认收货吗？')) {
+    return
+  }
+
+  try {
+    const response = await confirmOrder(orderId)
+    if (response.code === 200) {
+      alert('确认收货成功')
+      await fetchOrders()
+    } else {
+      alert(response.message || '确认收货失败')
+    }
+  } catch (error) {
+    console.error('确认收货失败:', error)
+    alert(error.response?.data?.message || '确认收货失败，请稍后重试')
+  }
 };
 
 const removeFavorite = async (id) => {
@@ -649,6 +709,10 @@ const handleOrderPageChange = (page) => {
   fetchOrders()
 }
 
+const goToOrderDetail = (orderId) => {
+  router.push(`/orders/${orderId}`)
+}
+
 const handleSaveSettings = async () => {
   try {
     const updateData = {
@@ -692,22 +756,23 @@ const fetchOrders = async () => {
     const params = {
       page: ordersPagination.value.page,
       pageSize: ordersPagination.value.pageSize,
-      status: ordersPagination.value.status || undefined // 如果为空字符串则不传递该参数
+      status: ordersPagination.value.status || undefined
     }
     
     const response = await getMyOrders(params)
     
     if (response.code === 200 && response.data) {
-      // 将后端返回的订单数据格式化为前端所需格式
       orders.value = (response.data.list || []).map(order => ({
-        id: order.id || order.orderNo || order.id,
-        time: order.createdAt || order.paidAt || order.shippedAt || order.receivedAt || '未知时间',
-        status: order.status || order.paymentStatus || '未知状态',
-        bookCover: order.bookCover || order.cover || '',
-        bookTitle: order.bookTitle || order.title || '未知书籍',
-        seller: order.sellerName || order.seller || '未知卖家',
-        price: order.totalPrice || order.bookPrice || 0,
-        quantity: order.quantity || 1
+        id: order.id,
+        orderNo: order.orderNo,
+        createdAt: order.createdAt,
+        status: order.status,
+        bookCover: order.bookCover,
+        bookTitle: order.bookTitle,
+        sellerName: order.sellerName,
+        price: order.price,
+        totalPrice: order.totalPrice,
+        quantity: order.quantity
       }))
       ordersPagination.value.total = response.data.total || 0
     } else {
