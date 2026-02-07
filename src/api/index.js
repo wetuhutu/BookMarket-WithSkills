@@ -4,6 +4,8 @@ export const getCategories = () => request.get('/books/categories')
 
 export const getHotBooks = (limit = 4) => request.get('/books/hot', { params: { limit } })
 
+export const getHotBookTop = () => request.get('/books/hot/top')
+
 export const getBooks = (params) => request.get('/books', { params })
 
 export const getBookDetail = (id) => request.get(`/books/${id}`)

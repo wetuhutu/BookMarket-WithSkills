@@ -41,7 +41,7 @@
         </div>
       </div>
       <div class="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700 text-center text-gray-600 dark:text-gray-400">
-        <p>&copy; 2024 校园书市. All rights reserved.</p>
+        <p>&copy; 2026 校园书市. All rights reserved.</p>
       </div>
     </div>
   </footer>

@@ -35,7 +35,7 @@
             </div>
           </div>
           <div class="relative">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 transform rotate-3 hover:rotate-0 transition-transform duration-300">
+            <div v-if="hotBookTop" class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 transform rotate-3 hover:rotate-0 transition-transform duration-300">
               <div class="flex items-center space-x-4 mb-6">
                 <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center">
                   <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,25 +43,32 @@
                   </svg>
                 </div>
                 <div>
-                  <div class="font-semibold text-gray-900 dark:text-white">高等数学</div>
-                  <div class="text-sm text-gray-600 dark:text-gray-400">同济大学出版社</div>
+                  <div class="font-semibold text-gray-900 dark:text-white">{{ hotBookTop.title }}</div>
+                  <div class="text-sm text-gray-600 dark:text-gray-400">{{ hotBookTop.author }}</div>
                 </div>
               </div>
               <div class="space-y-3">
                 <div class="flex justify-between">
                   <span class="text-gray-600 dark:text-gray-400">原价</span>
-                  <span class="text-gray-400 dark:text-gray-500 line-through">¥68.00</span>
+                  <span class="text-gray-400 dark:text-gray-500 line-through">¥{{ hotBookTop.originalPrice }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600 dark:text-gray-400">现价</span>
-                  <span class="text-2xl font-bold text-primary-600 dark:text-primary-400">¥35.00</span>
+                  <span class="text-2xl font-bold text-primary-600 dark:text-primary-400">¥{{ hotBookTop.price }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600 dark:text-gray-400">成色</span>
-                  <span class="text-green-600 dark:text-green-400">九成新</span>
+                  <span class="text-green-600 dark:text-green-400">{{ hotBookTop.condition }}</span>
                 </div>
               </div>
-              <button class="w-full mt-6 btn btn-primary">立即购买</button>
+              <router-link :to="`/books/${hotBookTop.id}`" class="block w-full mt-6 btn btn-primary text-center">查看详情</router-link>
+            </div>
+            <div v-else-if="loading" class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
+              <div class="animate-pulse space-y-4">
+                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -126,9 +133,10 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getCategories } from '@/api/index'
+import { getCategories, getHotBookTop } from '@/api/index'
 
 const categories = ref([])
+const hotBookTop = ref(null)
 const loading = ref(true)
 
 const fetchCategories = async () => {
@@ -139,6 +147,17 @@ const fetchCategories = async () => {
     }
   } catch (error) {
     console.error('获取分类失败:', error)
+  }
+}
+
+const fetchHotBookTop = async () => {
+  try {
+    const res = await getHotBookTop()
+    if (res.code === 200) {
+      hotBookTop.value = res.data
+    }
+  } catch (error) {
+    console.error('获取热门书籍TOP1失败:', error)
   } finally {
     loading.value = false
   }
@@ -146,5 +165,6 @@ const fetchCategories = async () => {
 
 onMounted(() => {
   fetchCategories()
+  fetchHotBookTop()
 })
 </script>
