@@ -522,7 +522,7 @@ const handleAvatarChange = async (event) => {
       avatarUploading.value = true
       const response = await uploadFile(file, 'avatar')
       if (response.code === 200 && response.data) {
-        settings.value.avatar = response.data.url
+        settings.value.avatar = response.data
       } else {
         alert('上传失败：' + (response.message || '未知错误'))
       }
