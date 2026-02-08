@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bookmarket.mapper.UserMapper">
+    <insert id="save" keyProperty="" useGeneratedKeys="true">
+        insert into user(phone, username, password, email, avatar, level, points, created_at)
+        values(
+        #{phone},
+        #{username},
+        #{password},
+        #{email},
+        'https://example.com/default-avatar.jpg',
+        '普通会员',
+        0,
+        now()
+        )
+    </insert>
+
+    <update id="update" keyProperty="seller.id" useGeneratedKeys="true">
+        update user
+            <set>
+                <if test="seller.username!=null and seller.username!='' ">username = #{seller.username},</if>
+                <if test="seller.avatar!=null and seller.avatar!='' ">avatar = #{seller.avatar},</if>
+                <if test="seller.email!=null ">email = #{seller.email},</if>
+                <if test="seller.sellerDescription!=null ">seller_description = #{seller.sellerDescription}</if>
+            </set>
+        where username = #{usernameContext}
+    </update>
+
+
+    <select id="getSellerById" resultType="com.bookmarket.pojo.Seller">
+        select * from user where id = #{id}
+    </select>
+    <select id="findUserByUsername" resultType="com.bookmarket.pojo.Seller">
+        select * from user where username = #{username}
+    </select>
+</mapper>

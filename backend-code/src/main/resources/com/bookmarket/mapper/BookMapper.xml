@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bookmarket.mapper.BookMapper">
+
+    <resultMap id="BaseResultMap" type="com.bookmarket.pojo.Book">
+            <id property="id" column="id" />
+            <result property="title" column="title" />
+            <result property="author" column="author" />
+            <result property="isbn" column="isbn" />
+            <result property="publisher" column="publisher" />
+            <result property="publishDate" column="publish_date" />
+            <result property="pages" column="pages" />
+            <result property="categoryId" column="categoryId" />
+            <result property="condition" column="condition" />
+            <result property="price" column="price" />
+            <result property="originalPrice" column="original_price" />
+            <result property="stock" column="stock" />
+            <result property="cover" column="cover" />
+            <result property="images" column="images" />
+            <result property="description" column="description" />
+            <result property="sellerId" column="seller_id" />
+            <result property="status" column="status" />
+            <result property="createdAt" column="created_at" />
+            <result property="updatedAt" column="updated_at" />
+            <result property="images" column="images" javaType="java.util.List"
+                jdbcType="VARCHAR" typeHandler="com.bookmarket.utils.JsonTypeHandler"/>
+    </resultMap>
+
+
+    <insert id="save" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO book (seller_id,
+            title, author, isbn, publisher, publish_date, pages,
+            category_id, `condition`, price, original_price, stock,
+            cover, images, description
+        )
+        VALUES (
+                   #{sellerId},
+                   #{title}, #{author}, #{isbn}, #{publisher}, #{publishDate}, #{pages},
+                   #{categoryId}, #{condition}, #{price}, #{originalPrice}, #{stock},
+                   #{cover}, #{images,typeHandler=com.bookmarket.utils.JsonTypeHandler}, #{description}
+               )
+    </insert>
+
+    <select id="listCategory" resultType="com.bookmarket.vo.CategoryVO">
+        select c.id ,c.name,c.icon, count(*) count
+        from book b
+                 join category c on c.id = b.category_id
+        group by b.category_id
+        order by count desc
+        limit 0,6
+    </select>
+
+    <select id="listHotBooks" resultType="com.bookmarket.vo.HotBooksVO">
+        SELECT DISTINCT
+            FIRST_VALUE(b.id) OVER (
+                PARTITION BY b.title, b.author  -- 按标题、作者分区（分组）
+                ORDER BY b.id DESC  -- 按id降序，取第一个就是最新id
+                ) AS id,
+            b.title,
+            b.author,
+            b.`condition` ,
+            b.price ,
+            b.original_price ,
+            b.cover ,
+            COUNT(*) OVER (PARTITION BY b.title, b.author) AS book_count
+        FROM book b
+        where status = 1
+        ORDER BY book_count DESC
+        limit 0,#{limit};
+    </select>
+
+    <select id="listBooks" resultType="com.bookmarket.pojo.Book">
+        select id,title,author,category_id,`condition`,price,original_price,stock,cover from book
+        <where>
+            <if test="category!=null and category !='' "> category_id = #{category}</if>
+            <if test="priceMin!=null "> and price >= #{priceMin}</if>
+            <if test="priceMax!=null "> and price &lt;= #{priceMax}</if>
+            <if test="condition!=null and condition !='' "> and book.condition = #{condition}</if>
+            <if test="keyword!=null and keyword !='' "> and title like concat('%',#{keyword},'%') </if>
+        </where>
+        <if test="sortBy != null and sortBy!='' "> order by</if>
+        <choose>
+            <when test="sortBy == 'default' "> id</when>
+            <when test="sortBy == 'price-asc'"> price asc</when>
+            <when test="sortBy == 'price-desc'"> price desc</when>
+            <when test="sortBy == 'time-desc'"> `updated_at` desc</when>
+            <when test="sortBy == 'condition'"> `condition`desc</when>
+        </choose>
+    </select>
+
+    <select id="getBookById" resultType="com.bookmarket.vo.BookVO">
+        select
+            b.id,
+            b.title,
+            b.author,
+            b.isbn,
+            b.publisher,
+            b.publish_date ,
+            b.pages,
+            b.category_id ,
+            b.`condition`,
+            b.price,
+            b.original_price ,
+            b.stock,
+            b.cover,
+            b.images,
+            b.description,
+            b.created_at,
+            u.id sellerId,
+            u.username sellerName,
+            u.seller_level ,
+            u.seller_rating ,
+            u.seller_is_verified  isVerified
+        from book b
+        join user u on b.seller_id = u.id
+        where b.id = #{id}
+    </select>
+
+    <select id="getSameCategoryBookById" resultType="com.bookmarket.vo.BookVO">
+        SELECT *
+        FROM book
+        WHERE category_id =
+              (SELECT category_id
+               FROM book
+               WHERE id = #{bookId})
+          AND id != #{bookId}
+        LIMIT 0,4;
+    </select>
+
+    <select id="getBooksByUserId" resultType="com.bookmarket.pojo.Book">
+        select * from book
+        <where>
+            seller_id = #{userId}
+            <if test="status!=null"> and 'status' = #{status}</if>
+        </where>
+
+    </select>
+
+
+</mapper>

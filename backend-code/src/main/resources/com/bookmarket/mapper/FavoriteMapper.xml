@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bookmarket.mapper.FavoriteMapper">
+
+    <resultMap id="BookResultMap" type="com.bookmarket.pojo.Book">
+        <id column="book_id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="author" property="author"/>
+        <result column="cover" property="cover"/>
+        <result column="price" property="price"/>
+        <result column="condition" property="condition"/>
+        <result column="original_price" property="originalPrice"/>
+        <result column="book_condition" property="condition"/>
+        <result column="category_id" property="categoryId"/>
+    </resultMap>
+
+    <resultMap id="BaseResultMap" type="com.bookmarket.pojo.Favorite">
+            <id property="id" column="id" />
+            <result property="bookId" column="book_id" />
+            <result property="createdAt" column="created_at" />
+            <association property="book" resultMap="BookResultMap"/>
+    </resultMap>
+
+    <insert id="insertFavorite">
+        insert into favorite(book_id,user_id)
+        values (#{bookId},#{userId})
+    </insert>
+
+    <delete id="delete">
+        delete from favorite where user_id = #{userId} and book_id = #{bookId}
+    </delete>
+
+    <select id="selectFavoriteListByUserId" resultMap="BaseResultMap">
+            select f.*,b.* from favorite f
+            join bookmarket.book b on f.book_id = b.id
+            where f.user_id = #{userId}
+    </select>
+
+</mapper>
