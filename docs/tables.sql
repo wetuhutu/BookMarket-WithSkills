@@ -40,6 +40,26 @@ create index idx_seller
 create fulltext index idx_title_author
     on book (title, author);
 
+create table cart
+(
+    id         bigint auto_increment
+        primary key,
+    user_id    bigint                             not null comment '用户ID',
+    book_id    bigint                             not null comment '书籍ID',
+    quantity   int      default 1                 null comment '数量',
+    price      decimal(10, 2)                     not null comment '添加时的价格',
+    created_at datetime default CURRENT_TIMESTAMP null,
+    constraint uk_user_book
+        unique (user_id, book_id)
+)
+    comment '购物车表' charset = utf8mb4;
+
+create index book_id
+    on cart (book_id);
+
+create index idx_user
+    on cart (user_id);
+
 create table category
 (
     id          varchar(50)                        not null comment '分类ID（英文标识）'
@@ -52,59 +72,6 @@ create table category
 )
     comment '分类表' charset = utf8mb4;
 
-create table user
-(
-    id                  bigint auto_increment
-        primary key,
-    username            varchar(50)                             not null comment '用户名',
-    phone               varchar(20)                             not null comment '手机号',
-    email               varchar(100)                            null comment '邮箱',
-    password            varchar(255)                            not null comment '密码（加密）',
-    avatar              varchar(500)                            null comment '头像URL',
-    level               varchar(20)   default '普通会员'        null comment '会员等级',
-    points              int           default 0                 null comment '积分',
-    is_seller           tinyint(1)    default 0                 null comment '是否卖家',
-    seller_level        varchar(20)                             null comment '卖家等级',
-    seller_is_verified  tinyint(1)    default 0                 null comment '是否认证',
-    created_at          datetime      default CURRENT_TIMESTAMP null,
-    updated_at          datetime      default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
-    seller_description  varchar(255)                            null comment '卖家描述',
-    seller_positiveRate decimal(5, 1) default 0.0               null,
-    seller_rating       decimal(3, 1) default 0.0               null comment '卖家评分',
-    seller_sales_count  int           default 0                 null comment '销售数量',
-    constraint phone
-        unique (phone),
-    constraint username
-        unique (username)
-)
-    comment '用户表' charset = utf8mb4;
-
-create table cart
-(
-    id         bigint auto_increment
-        primary key,
-    user_id    bigint                             not null comment '用户ID',
-    book_id    bigint                             not null comment '书籍ID',
-    quantity   int      default 1                 null comment '数量',
-    price      decimal(10, 2)                     not null comment '添加时的价格',
-    created_at datetime default CURRENT_TIMESTAMP null,
-    constraint uk_user_book
-        unique (user_id, book_id),
-    constraint cart_ibfk_1
-        foreign key (user_id) references user (id)
-            on delete cascade,
-    constraint cart_ibfk_2
-        foreign key (book_id) references book (id)
-            on delete cascade
-)
-    comment '购物车表' charset = utf8mb4;
-
-create index book_id
-    on cart (book_id);
-
-create index idx_user
-    on cart (user_id);
-
 create table favorite
 (
     id         bigint auto_increment
@@ -113,13 +80,7 @@ create table favorite
     book_id    bigint                             not null comment '书籍ID',
     created_at datetime default CURRENT_TIMESTAMP null,
     constraint uk_user_book
-        unique (user_id, book_id),
-    constraint favorite_ibfk_1
-        foreign key (user_id) references user (id)
-            on delete cascade,
-    constraint favorite_ibfk_2
-        foreign key (book_id) references book (id)
-            on delete cascade
+        unique (user_id, book_id)
 )
     comment '收藏表' charset = utf8mb4;
 
@@ -147,12 +108,10 @@ create table `order`
     paid_at         datetime                              null comment '支付时间',
     shipped_at      datetime                              null comment '发货时间',
     received_at     datetime                              null comment '收货时间',
+    book_title      varchar(255)                          null,
+    cancelled_at    datetime                              null,
     constraint order_no
-        unique (order_no),
-    constraint order_ibfk_1
-        foreign key (buyer_id) references user (id),
-    constraint order_ibfk_2
-        foreign key (seller_id) references user (id)
+        unique (order_no)
 )
     comment '订单表' charset = utf8mb4;
 
@@ -175,13 +134,7 @@ create table review
     user_avatar varchar(500)                       null comment '评价用户头像',
     rating      tinyint                            not null comment '评分（1-5）',
     content     text                               null comment '评价内容',
-    created_at  datetime default CURRENT_TIMESTAMP null,
-    constraint review_ibfk_1
-        foreign key (book_id) references book (id)
-            on delete cascade,
-    constraint review_ibfk_2
-        foreign key (user_id) references user (id)
-            on delete cascade
+    created_at  datetime default CURRENT_TIMESTAMP null
 )
     comment '评价表' charset = utf8mb4;
 
@@ -193,6 +146,33 @@ create index idx_rating
 
 create index idx_user
     on review (user_id);
+
+create table user
+(
+    id                  bigint auto_increment
+        primary key,
+    username            varchar(50)                             not null comment '用户名',
+    phone               varchar(20)                             not null comment '手机号',
+    email               varchar(100)                            null comment '邮箱',
+    password            varchar(255)                            not null comment '密码（加密）',
+    avatar              varchar(500)                            null comment '头像URL',
+    level               varchar(20)   default '普通会员'        null comment '会员等级',
+    points              int           default 0                 null comment '积分',
+    is_seller           tinyint(1)    default 0                 null comment '是否卖家',
+    seller_level        varchar(20)   default '普通卖家'        null comment '卖家等级',
+    seller_is_verified  tinyint(1)    default 0                 null comment '是否认证',
+    created_at          datetime      default CURRENT_TIMESTAMP null,
+    updated_at          datetime      default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    seller_description  varchar(255)                            null comment '卖家描述',
+    seller_positiveRate decimal(5, 1) default 0.0               null,
+    seller_rating       decimal(3, 1) default 0.0               null comment '卖家评分',
+    seller_sales_count  int           default 0                 null comment '销售数量',
+    constraint phone
+        unique (phone),
+    constraint username
+        unique (username)
+)
+    comment '用户表' charset = utf8mb4;
 
 create index idx_phone
     on user (phone);
