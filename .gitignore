@@ -1,6 +1,7 @@
 node_modules/
 dist/
 dist-ssr/
+target/
 *.local
 .DS_Store
 *.log
