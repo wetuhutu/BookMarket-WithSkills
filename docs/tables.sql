@@ -163,7 +163,7 @@ create table user
     seller_is_verified  tinyint(1)    default 0                 null comment '是否认证',
     created_at          datetime      default CURRENT_TIMESTAMP null,
     updated_at          datetime      default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
-    seller_description  varchar(255)                            null comment '卖家描述',
+    seller_description  varchar(255)  default ''                null comment '卖家描述',
     seller_positiveRate decimal(5, 1) default 0.0               null,
     seller_rating       decimal(3, 1) default 0.0               null comment '卖家评分',
     seller_sales_count  int           default 0                 null comment '销售数量',
