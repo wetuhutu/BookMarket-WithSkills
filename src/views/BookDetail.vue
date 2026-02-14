@@ -222,7 +222,11 @@ const checkFavoriteStatus = async () => {
       isWishlisted.value = favoriteBooks.some(item => item.bookId === parseInt(route.params.id))
     }
   } catch (error) {
-    console.error('检查收藏状态失败:', error)
+    if (error.response?.status === 403 || error.response?.status === 401) {
+      console.log('未登录，跳过收藏状态检查')
+    } else {
+      console.error('检查收藏状态失败:', error)
+    }
   }
 }
 
@@ -290,8 +294,8 @@ const handlePurchase = async () => {
     }
   } catch (error) {
     console.error('创建订单失败:', error)
-    if (error.response?.status === 401) {
-      alert('登录已过期，请重新登录')
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      alert('请先登录')
       router.push('/login')
     } else {
       alert(error.response?.data?.message || '订单创建失败，请稍后重试')
